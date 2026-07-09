@@ -11,69 +11,71 @@
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') {
-          res.setHeader('Allow', 'POST');
-          return res.status(405).json({ error: 'Method not allowed' });
-    }
+      if (req.method !== 'POST') {
+              res.setHeader('Allow', 'POST');
+              return res.status(405).json({ error: 'Method not allowed' });
+      }
 
   const body = req.body || {};
-    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
-    const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : '';
+      const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+      const name = typeof body.name === 'string' ? body.name.trim().slice(0, 100) : '';
 
   if (!email || !EMAIL_RE.test(email)) {
-        return res.status(400).json({ error: 'A valid email address is required.' });
+          return res.status(400).json({ error: 'A valid email address is required.' });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-          console.error('RESEND_API_KEY is not configured.');
-          return res.status(500).json({ error: 'Waitlist is temporarily unavailable. Please try again shortly.' });
-    }
-
-  const fromAddress = process.env.RESEND_FROM_EMAIL || 'Beurer BiteX <onboarding@resend.dev>';
-    const fromMatch = fromAddress.match(/<(.+)>/);
-    const notifyTo = process.env.WAITLIST_NOTIFY_EMAIL || (fromMatch ? fromMatch[1] : fromAddress);
-
-  try {
-        const confirmRes = await fetch('https://api.resend.com/emails', {
-                method: 'POST',
-                headers: {
-                          Authorization: 'Bearer ' + apiKey,
-                          'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                          from: fromAddress,
-                          to: email,
-                          subject: "You're on the BR60 waitlist",
-                          html: '<p>Hi' + (name ? ' ' + name : '') + ',</p>' +
-                                      '<p>Demand for the Beurer BR60 outpaced production. You are on the waitlist, and we will email you the moment it is back in stock, with early access before the public restock.</p>' +
-                                      '<p>Beurer BiteX</p>',
-                }),
-        });
-
-      if (!confirmRes.ok) {
-              const errText = await confirmRes.text();
-              console.error('Resend confirmation email failed:', errText);
-              return res.status(502).json({ error: 'Could not send confirmation email. Please try again.' });
+      if (!apiKey) {
+              console.error('RESEND_API_KEY is not configured.');
+              return res.status(500).json({ error: 'Waitlist is temporarily unavailable. Please try again shortly.' });
       }
 
-      fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                        Authorization: 'Bearer ' + apiKey,
-                        'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                        from: fromAddress,
-                        to: notifyTo,
-                        subject: 'New BR60 waitlist signup',
-                        html: '<p>New signup:</p><ul><li>Name: ' + (name || '(not provided)') + '</li><li>Email: ' + email + '</li></ul>',
-              }),
-      }).catch(function (err) { console.error('Resend notification email failed:', err); });
+  const fromAddress = process.env.RESEND_FROM_EMAIL || 'Beurer BiteX <onboarding@resend.dev>';
+      const fromMatch = fromAddress.match(/<(.+)>/);
+      const notifyTo = process.env.WAITLIST_NOTIFY_EMAIL || (fromMatch ? fromMatch[1] : fromAddress);
 
-      return res.status(200).json({ ok: true });
+  try {
+          const confirmRes = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                                Authorization: 'Bearer ' + apiKey,
+                                'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                                from: fromAddress,
+                                to: email,
+                                subject: "You're on the BR60 waitlist",
+                                html: `<p>Hi ${name || 'there'},</p>
+                                <p>Thanks for your interest in the Beurer BR60. We've sold out faster than expected — but you're now on the list, and we'll email you the moment it's back in stock, ahead of the general public.</p>
+                                <p>While you wait: the BR60 is backed by two independent, peer-reviewed clinical studies showing drug-free relief from insect bite itch in as little as one minute. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10309056/">Read more here.</a></p>
+                                <p>Questions? Just reply to this email.</p>
+                                <p>— The Beurer BR60 team</p>`,
+                    }),
+          });
+
+        if (!confirmRes.ok) {
+                  const errText = await confirmRes.text();
+                  console.error('Resend confirmation email failed:', errText);
+                  return res.status(502).json({ error: 'Could not send confirmation email. Please try again.' });
+        }
+
+        fetch('https://api.resend.com/emails', {
+                  method: 'POST',
+                  headers: {
+                              Authorization: 'Bearer ' + apiKey,
+                              'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                              from: fromAddress,
+                              to: notifyTo,
+                              subject: 'New BR60 waitlist signup',
+                              html: '<p>New signup:</p><ul><li>Name: ' + (name || '(not provided)') + '</li><li>Email: ' + email + '</li></ul>',
+                  }),
+        }).catch(function (err) { console.error('Resend notification email failed:', err); });
+
+        return res.status(200).json({ ok: true });
   } catch (err) {
-        console.error('Waitlist submission error:', err);
-        return res.status(500).json({ error: 'Something went wrong. Please try again.' });
+          console.error('Waitlist submission error:', err);
+          return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 }
