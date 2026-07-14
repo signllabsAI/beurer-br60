@@ -68,6 +68,10 @@ export default async function handler(req, res) {
                                       subject: "You're on the BR60 waitlist",
                                       html: `<p>Hi ${name || 'there'},</p>
                                       <p>Thanks for your interest in the Beurer BR60. We've sold out faster than expected — but you're now on the list, and we'll email you the moment it's back in stock, ahead of the general public.</p>
+                                      <p style="margin:22px 0;padding:18px 22px;background:#F5F5F6;border-radius:12px;border:1px dashed #C50050;">
+                                        <strong>As a thank-you for waiting:</strong> here's 15% off your BR60 when it's back in stock.<br>
+                                        <span style="display:inline-block;margin-top:10px;font-family:monospace;font-size:20px;font-weight:700;letter-spacing:2px;color:#C50050;">SORRY15</span>
+                                      </p>
                                       <p>While you wait: the BR60 is backed by two independent, peer-reviewed clinical studies showing drug-free relief from insect bite itch in as little as one minute. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC10309056/">Read more here.</a></p>
                                       <p>Questions? Just reply to this email.</p>
                                       <p>— The Beurer BR60 team</p>`,
